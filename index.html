@@ -6,27 +6,27 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <header>
+      <h1>💻 DES Step-by-Step Demo</h1>
+      <p>Giải thích chi tiết các bước mã hóa DES</p>
+    </header>
+
     <canvas id="charRain"></canvas>
     <div class="container">
+      <!-- Cột trái -->
       <div class="left">
         <div class="panel">
           <h3>🔐 Nhập dữ liệu</h3>
-          <label>Plaintext hoặc Ciphertext:</label><br />
-          <input
-            id="plaintext"
-            style="width: 100%"
-            placeholder="Nhập dữ liệu..."
-          />
-          <label>Khóa (8 ký tự):</label><br />
-          <input
-            id="key"
-            maxlength="8"
-            style="width: 100%"
-            placeholder="VD: mysecret"
-          />
+          <label>Plaintext hoặc Ciphertext:</label>
+          <input id="plaintext" placeholder="Nhập dữ liệu..." />
+          <label>Khóa (8 ký tự):</label>
+          <input id="key" maxlength="8" placeholder="VD: mysecret" />
+        </div>
+
+        <div class="panel">
           <h3>🧱 Các Block được chia</h3>
           <div id="blockListBox">Chưa có dữ liệu</div>
-          <div style="margin-top: 8px">
+          <div class="button-group">
             <button id="encrypt">Mã hóa</button>
             <button id="decrypt">Giải mã</button>
             <button id="fillCipher">Chèn kết quả</button>
@@ -44,14 +44,14 @@
           <div id="resultBox">—</div>
         </div>
 
-        <button id="step" style="margin-top: auto">▶ Tiếp tục</button>
+        <button id="step" class="step-btn">▶ Tiếp tục</button>
       </div>
+
+      <!-- Cột phải -->
       <div class="right">
         <div class="panel">
-          <h3 style="margin: 0 0 8px; color: #4fc3f7">🔁Hiện tại</h3>
-
-          <!-- Bảng vòng hiện tại -->
-          <div id="currentRoundBox" class="table-box">
+          <h3>🔁 Vòng hiện tại</h3>
+          <div class="table-box">
             <table id="currentRound">
               <thead>
                 <tr>
@@ -65,8 +65,7 @@
             </table>
           </div>
 
-          <!-- Bảng lịch sử -->
-          <h3 style="margin: 10px 0 4px; color: #4fc3f7">📜 Lịch sử</h3>
+          <h3>📜 Lịch sử</h3>
           <div class="round-history-container">
             <table id="roundHistory">
               <thead>
@@ -83,11 +82,12 @@
         </div>
 
         <div class="panel">
-          <h3 style="margin: 0 0 6px; color: #4fc3f7">🐞 Debug / Log</h3>
+          <h3>🐞 Debug / Log</h3>
           <div id="log">Sẵn sàng.</div>
         </div>
       </div>
     </div>
+
     <div id="toast">✅ Hoàn thành 16 vòng DES!</div>
     <canvas id="fireworks"></canvas>
 

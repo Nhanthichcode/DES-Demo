@@ -1,3 +1,29 @@
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  background: rgba(25, 120, 210, 0.9);
+  color: white;
+  padding: 12px 0;
+  z-index: 15;
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-sizing: border-box; /* đảm bảo padding không tràn */
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 36px;
+  z-index: 2;
+  margin-top: 90px; /* cách header */
+  padding: 0 12px; /* tránh tràn ngang */
+  overflow-x: auto; /* nếu container quá rộng, có thể cuộn ngang */
+  box-sizing: border-box;
+}
 /* ====================== Tổng thể ====================== */
 html,
 body {
@@ -11,6 +37,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+
+  /* bù lại scale để full màn hình */
 }
 
 /* ====================== Nền hiệu ứng ====================== */
@@ -33,20 +61,38 @@ canvas#fireworks {
   pointer-events: none;
 }
 
-/* ====================== Bố cục container ====================== */
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 36px;
-  z-index: 2;
+/* ====================== Header ====================== */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  background: rgba(25, 120, 210, 0.9);
+  color: white;
+  padding: 10px 0;
+  z-index: 15;
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
+
+header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+header p {
+  margin: 0;
+  font-size: 14px;
+  color: #cce5ff;
+}
+
+/* ====================== Bố cục container ====================== */
 
 .left,
 .right {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   padding: 20px;
   z-index: 2;
   background: rgba(10, 25, 45, 0.35);
@@ -57,10 +103,10 @@ canvas#fireworks {
 }
 
 .left {
-  width: 360px;
+  width: 660px;
 }
 .right {
-  width: 560px;
+  width: 660px;
 }
 
 /* ====================== Frosted Glass Panel ====================== */
