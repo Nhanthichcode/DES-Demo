@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>💻 DES Step-by-Step Demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <canvas id="charRain"></canvas>
+    <div class="container">
+      <div class="left">
+        <div class="panel">
+          <h3>🔐 Nhập dữ liệu</h3>
+          <label>Plaintext hoặc Ciphertext:</label><br />
+          <input
+            id="plaintext"
+            style="width: 100%"
+            placeholder="Nhập dữ liệu..."
+          />
+          <label>Khóa (8 ký tự):</label><br />
+          <input
+            id="key"
+            maxlength="8"
+            style="width: 100%"
+            placeholder="VD: mysecret"
+          />
+
+          <div style="margin-top: 8px">
+            <button id="encrypt">Mã hóa</button>
+            <button id="decrypt">Giải mã</button>
+            <button id="fillCipher">Chèn kết quả</button>
+            <button id="reset">🔁 Làm lại</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>📊 Thông tin bước</h3>
+          <div id="stepBox">Chưa khởi chạy</div>
+        </div>
+
+        <div class="panel">
+          <h3>📋 Kết quả</h3>
+          <div id="resultBox">—</div>
+        </div>
+
+        <button id="step" style="margin-top: auto">▶ Tiếp tục</button>
+      </div>
+      <div class="right">
+        <div class="panel">
+          <h3 style="margin: 0 0 8px; color: #4fc3f7">🔁Hiện tại</h3>
+
+          <!-- Bảng vòng hiện tại -->
+          <div id="currentRoundBox" class="table-box">
+            <table id="currentRound">
+              <thead>
+                <tr>
+                  <th>Dòng</th>
+                  <th>L</th>
+                  <th>R</th>
+                  <th>Subkey</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <!-- Bảng lịch sử -->
+          <h3 style="margin: 10px 0 4px; color: #4fc3f7">📜 Lịch sử</h3>
+          <div class="round-history-container">
+            <table id="roundHistory">
+              <thead>
+                <tr>
+                  <th>Dòng</th>
+                  <th>L</th>
+                  <th>R</th>
+                  <th>Subkey</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3 style="margin: 0 0 6px; color: #4fc3f7">🐞 Debug / Log</h3>
+          <div id="log">Sẵn sàng.</div>
+        </div>
+      </div>
+    </div>
+    <div id="toast">✅ Hoàn thành 16 vòng DES!</div>
+    <canvas id="fireworks"></canvas>
+
+    <script src="des.js"></script>
+    <script src="ui.js"></script>
+    <script src="javascript.js"></script>
+  </body>
+</html>
