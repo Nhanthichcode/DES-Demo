@@ -1,11 +1,13 @@
-// ui.js — Parallel multi-block DES: mỗi "step" thực hiện 1 round cho tất cả block
+// ui.js — DES Step-by-Step Demo
 
-let blocks = []; // mỗi phần: { bytes: Uint8Array(8), cipherHex, rounds: [ {round,L,R,subkey} ] }
-let currentRoundIndex = 0; // 0..15
+// ====== State ======
+let blocks = []; // mỗi block: { bytes, cipherHex, rounds }
+let currentRoundIndex = 0;
 let mode = null; // "encrypt" hoặc "decrypt"
-let lastCipherHex = "";
-let lastPlain = "";
+let lastResult = ""; // kết quả cuối cùng
+let lastMode = ""; // luân phiên Fill Cipher
 
+// ====== DOM elements ======
 const stepBox = document.getElementById("stepBox");
 const resultBox = document.getElementById("resultBox");
 const log = document.getElementById("log");
@@ -14,15 +16,9 @@ const historyTbody = document.querySelector("#roundHistory tbody");
 const toast = document.getElementById("toast");
 const canvas = document.getElementById("fireworks");
 const ctx = canvas.getContext("2d");
+const fillBtn = document.getElementById("fillCipher");
 
-function resizeCanvas() {
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
-}
-addEventListener("resize", resizeCanvas);
-resizeCanvas();
-
-// helpers
+// ====== Helpers ======
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 function utf8ToBytes(s) {
@@ -46,43 +42,22 @@ function padPKCS5(bytes) {
 }
 function unpad(bytes) {
   const p = bytes[bytes.length - 1];
-  if (p > 0 && p <= 8) return bytes.slice(0, -p);
-  return bytes;
+  return p > 0 && p <= 8 ? bytes.slice(0, -p) : bytes;
 }
 
-// UI helpers
-function clearTables() {
-  currentRoundTbody.innerHTML = "";
-  historyTbody.innerHTML = "";
+// ====== Canvas fireworks ======
+function resizeCanvas() {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
 }
-function showToast(msg) {
-  toast.textContent = msg;
-  toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 3000);
-}
-function addHistoryRow(blockIndex, roundObj) {
-  const tr = document.createElement("tr");
-  tr.classList.add("new");
-  tr.innerHTML = `<td>${roundObj.round}</td><td>${roundObj.L}</td><td>${roundObj.R}</td><td>${roundObj.subkey}</td>`;
-  historyTbody.appendChild(tr);
-  tr.scrollIntoView({ behavior: "smooth", block: "end" });
-  setTimeout(() => tr.classList.remove("new"), 900);
-}
-function renderCurrentRound(rows) {
-  // rows: array of {blockIndex, roundObj}
-  currentRoundTbody.innerHTML = "";
-  for (const r of rows) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.roundObj.round}</td><td>${r.roundObj.L}</td><td>${r.roundObj.R}</td><td>${r.roundObj.subkey}</td>`;
-    currentRoundTbody.appendChild(tr);
-  }
-}
+addEventListener("resize", resizeCanvas);
+resizeCanvas();
 
-// fireworks (same as before)
 let particles = [];
+let animating = false;
 function spawnBurst(cx, cy, count) {
   for (let i = 0; i < count; i++) {
-    const a = Math.random() * Math.PI * 2;
+    const a = Math.random() * 2 * Math.PI;
     const s = 1.5 + Math.random() * 4;
     particles.push({
       x: cx,
@@ -97,7 +72,6 @@ function spawnBurst(cx, cy, count) {
     });
   }
 }
-let animating = false;
 function animateFireworks() {
   if (animating) return;
   animating = true;
@@ -118,14 +92,11 @@ function animateFireworks() {
       if (p.life <= 0) particles.splice(i, 1);
     }
     if (particles.length > 0) requestAnimationFrame(loop);
-    else {
-      animating = false;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
+    else animating = false;
   })();
 }
 function triggerFireworks() {
-  for (let b = 0; b < 6; b++)
+  for (let i = 0; i < 6; i++)
     spawnBurst(
       Math.random() * canvas.width,
       Math.random() * canvas.height * 0.4 + 50,
@@ -134,44 +105,104 @@ function triggerFireworks() {
   animateFireworks();
 }
 
-// prepare blocks for encrypt (parallel)
+// ====== UI helpers ======
+function clearTables() {
+  currentRoundTbody.innerHTML = "";
+  historyTbody.innerHTML = "";
+}
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.style.opacity = "1";
+  setTimeout(() => (toast.style.opacity = "0"), 2500);
+}
+function showBlocks(blocks) {
+  const box = document.getElementById("blockListBox");
+  if (!box) return;
+  if (!blocks || blocks.length === 0) {
+    box.textContent = "Chưa có dữ liệu.";
+    return;
+  }
+  box.innerHTML = blocks
+    .map(
+      (b, i) =>
+        `<div>Block ${i + 1}: <span style="color:#80d8ff">${b}</span></div>`
+    )
+    .join("");
+}
+
+// ====== History colors ======
+function getBlockColor(index) {
+  const hue = (index * 55) % 360; // màu gradient
+  return `hsla(${hue}, 80%, 60%, 0.15)`;
+}
+function addHistoryRow(_, roundObj, blockIndex) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${roundObj.round}</td>
+    <td>${roundObj.L}</td>
+    <td>${roundObj.R}</td>
+    <td>${roundObj.subkey}</td>
+  `;
+  tr.style.backgroundColor = getBlockColor(blockIndex);
+  tr.classList.add("new");
+  setTimeout(() => tr.classList.remove("new"), 1000);
+  historyTbody.appendChild(tr);
+  tr.scrollIntoView({ behavior: "smooth", block: "end" });
+}
+function renderCurrentRound(rows) {
+  currentRoundTbody.innerHTML = "";
+  for (const r of rows) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${r.roundObj.round}</td><td>${r.roundObj.L}</td><td>${r.roundObj.R}</td><td>${r.roundObj.subkey}</td>`;
+    currentRoundTbody.appendChild(tr);
+  }
+}
+
+// ====== Encrypt/Decrypt ======
 function startEncrypt() {
   const text = document.getElementById("plaintext").value || "";
   const key = document.getElementById("key").value || "";
-  if (key.length < 8) return alert("Key phải có ít nhất 8 ký tự.");
+  if (key.length < 8) return alert("Key phải >= 8 ký tự.");
   const bytes = utf8ToBytes(text);
   const padded = padPKCS5(bytes);
+
   blocks = [];
+  const blockStrList = [];
   for (let i = 0; i < padded.length; i += 8) {
     const blockBytes = padded.slice(i, i + 8);
     const blockStr = bytesToLatin1(blockBytes);
     const res = DES.encryptBlockFromText(blockStr, key);
-    // res.steps: array 16 rounds with round,L,R,subkey
     blocks.push({
       bytes: blockBytes,
       cipherHex: res.cipherHex,
       rounds: res.steps,
     });
+    blockStrList.push(blockStr);
   }
-  lastCipherHex = blocks.map((b) => b.cipherHex).join("");
-  lastPlain = text;
+
+  lastResult = blocks.map((b) => b.cipherHex).join("");
+  lastMode = "encrypt";
   mode = "encrypt";
   currentRoundIndex = 0;
+
   clearTables();
-  stepBox.textContent = `Encrypt prepared — ${blocks.length} block(s). Click "Tiếp tục" (16 rounds total).`;
+  showBlocks(blockStrList);
+  stepBox.textContent = `Encrypt prepared — ${blocks.length} block(s). Click "Tiếp tục".`;
   log.textContent =
-    'Chuẩn bị xong. Mỗi lần "Tiếp tục" sẽ chạy 1 round cho tất cả block.';
+    'Chuẩn bị xong. Mỗi lần "Tiếp tục" chạy 1 round cho tất cả block.';
+  fillBtn.disabled = false;
 }
 
-// prepare blocks for decrypt (parallel)
 function startDecrypt() {
   const key = document.getElementById("key").value || "";
-  if (key.length < 8) return alert("Key phải có ít nhất 8 ký tự.");
+  if (key.length < 8) return alert("Key phải >= 8 ký tự.");
   const input = document.getElementById("plaintext").value.trim();
   if (!/^[0-9a-fA-F]+$/.test(input))
-    return alert("Nhập ciphertext hex hợp lệ để giải mã.");
+    return alert("Nhập ciphertext hex hợp lệ.");
+
   blocks = [];
   let bytesAll = [];
+  const blockStrList = [];
   for (let i = 0; i < input.length; i += 16) {
     const hex = input.substr(i, 16);
     const res = DES.decryptBlockFromHex(hex, key);
@@ -181,92 +212,102 @@ function startDecrypt() {
       rounds: res.steps,
     });
     bytesAll.push(...latin1ToBytes(res.plaintext));
+    blockStrList.push(hex);
   }
+
   const unp = unpad(new Uint8Array(bytesAll));
-  lastPlain = bytesToUtf8(unp);
+  lastResult = bytesToUtf8(unp);
+  lastMode = "decrypt";
   mode = "decrypt";
   currentRoundIndex = 0;
+
   clearTables();
+  showBlocks(blockStrList);
   stepBox.textContent = `Decrypt prepared — ${blocks.length} block(s). Click "Tiếp tục".`;
   log.textContent =
-    'Chuẩn bị xong. Mỗi lần "Tiếp tục" sẽ chạy 1 round cho tất cả block.';
+    'Chuẩn bị xong. Mỗi lần "Tiếp tục" chạy 1 round cho tất cả block.';
+  fillBtn.disabled = false;
 }
 
-// single step: execute currentRoundIndex for all blocks, render currentRound rows, move previous current to history
+// ====== Step round ======
 function stepAll() {
   if (!blocks.length) {
-    log.textContent = "Chưa có block. Nhấn Encrypt/Decrypt trước.";
+    log.textContent = "Chưa có block.";
     return;
   }
   if (currentRoundIndex >= 16) {
-    log.textContent = "Đã hoàn tất 16 vòng cho tất cả block.";
+    log.textContent = "Đã hoàn tất 16 vòng.";
     return;
   }
-  // move any existing current rows to history (previous round)
-  const prevRows = Array.from(currentRoundTbody.querySelectorAll("tr"));
-  prevRows.forEach((r) => {
-    const cols = r.querySelectorAll("td");
-    const obj = {
-      round: cols[0].innerText,
-      L: cols[1].innerText,
-      R: cols[2].innerText,
-      subkey: cols[3].innerText,
-    };
-    addHistoryRow(null, obj);
-  });
-  // prepare rows for this round for each block
+
+  // Lưu vòng hiện tại vào lịch sử
   const rows = [];
   for (let b = 0; b < blocks.length; b++) {
     const roundObj = blocks[b].rounds[currentRoundIndex];
+    addHistoryRow(null, roundObj, b);
     rows.push({ blockIndex: b, roundObj });
   }
+
   renderCurrentRound(rows);
-  stepBox.textContent = `Đang hiển thị vòng ${
-    currentRoundIndex + 1
-  } / 16 cho tất cả block(s).`;
+  stepBox.textContent = `Vòng ${currentRoundIndex + 1}/16 cho ${
+    blocks.length
+  } block(s)`;
   log.textContent = `Round ${currentRoundIndex + 1} của ${
     blocks.length
   } block(s).`;
 
   currentRoundIndex++;
   if (currentRoundIndex === 16) {
-    // finished all rounds
-    if (mode === "encrypt") {
-      resultBox.textContent = `Ciphertext: ${lastCipherHex}`;
-      showToast(`✅ Hoàn thành: ${blocks.length} block(s) — 16 vòng`);
-      triggerFireworks();
-    } else {
-      resultBox.textContent = `Plaintext: ${lastPlain}`;
-      showToast(`✅ Giải mã xong ${blocks.length} block(s)`);
-      triggerFireworks();
-    }
+    resultBox.textContent =
+      mode === "encrypt"
+        ? `Ciphertext: ${lastResult}`
+        : `Plaintext: ${lastResult}`;
+    showToast(`✅ Hoàn thành ${blocks.length} block(s) — 16 vòng`);
+    triggerFireworks();
   }
 }
 
-// FIX: fillCipher button
-function fillCipher() {
-  if (!lastCipherHex) {
-    alert("Chưa có ciphertext. Hãy mã hóa trước.");
+// ====== Fill Cipher ======
+fillBtn.addEventListener("click", () => {
+  const inputBox = document.getElementById("plaintext");
+  if (currentRoundIndex < 16) {
+    alert("Chưa hoàn thành.");
     return;
   }
-  document.getElementById("plaintext").value = lastCipherHex;
-  log.textContent = "Đã điền ciphertext vừa tạo vào ô Plaintext.";
-}
+  if (!lastResult) {
+    alert("Chưa có dữ liệu!");
+    return;
+  }
+  inputBox.value = lastResult;
+  fillBtn.disabled = true;
+  if (lastMode === "encrypt") {
+    lastMode = "decrypt";
+    fillBtn.textContent = "🔁 Dùng cho Giải mã";
+  } else {
+    lastMode = "encrypt";
+    fillBtn.textContent = "🔁 Dùng cho Mã hóa";
+  }
+});
 
-// wire buttons
-document.getElementById("encrypt").addEventListener("click", startEncrypt);
-document.getElementById("decrypt").addEventListener("click", startDecrypt);
-document.getElementById("step").addEventListener("click", stepAll);
-const fillBtn = document.getElementById("fillCipher");
-if (fillBtn) fillBtn.addEventListener("click", fillCipher);
+// ====== Reset ======
 document.getElementById("reset").addEventListener("click", () => {
+  document.getElementById("plaintext").value = "";
+  document.getElementById("key").value = "";
+  document.getElementById("blockListBox").textContent = "Chưa có dữ liệu";
   blocks = [];
   currentRoundIndex = 0;
   mode = null;
-  lastCipherHex = "";
-  lastPlain = "";
+  lastResult = "";
+  lastMode = "";
   clearTables();
   resultBox.textContent = "";
   stepBox.textContent = "Chưa khởi chạy";
   log.textContent = "Reset hoàn tất.";
+  fillBtn.disabled = false;
+  fillBtn.textContent = "Chèn kết quả";
 });
+
+// ====== Nút chính ======
+document.getElementById("encrypt").addEventListener("click", startEncrypt);
+document.getElementById("decrypt").addEventListener("click", startDecrypt);
+document.getElementById("step").addEventListener("click", stepAll);
