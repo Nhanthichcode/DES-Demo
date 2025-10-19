@@ -41,7 +41,7 @@ function drawRain() {
     ctxRain.fillText(d.char, d.x, d.y);
 
     d.y += d.speed;
-    d.alpha -= 0.0015; // biến mất dần
+    d.alpha -= 0.002; // biến mất dần
     if (d.alpha <= 0 || d.y > H) {
       // reset ký tự mới
       d.x = Math.random() * W;
@@ -49,7 +49,7 @@ function drawRain() {
       d.alpha = 4;
       d.char = chars.charAt(Math.floor(Math.random() * chars.length));
       d.color = randomColor();
-      d.size = 24 + Math.random() * 30;
+      d.size = 35 + Math.random() * 30;
       d.speed = 1 + Math.random();
     }
   }
