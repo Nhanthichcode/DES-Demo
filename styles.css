@@ -1,47 +1,16 @@
-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  text-align: center;
-  background: rgba(25, 120, 210, 0.9);
-  color: white;
-  padding: 12px 0;
-  z-index: 15;
-  backdrop-filter: blur(6px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  box-sizing: border-box; /* đảm bảo padding không tràn */
-}
-
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 36px;
-  z-index: 2;
-  margin-top: 90px; /* cách header */
-  padding: 0 12px; /* tránh tràn ngang */
-  overflow-x: auto; /* nếu container quá rộng, có thể cuộn ngang */
-  box-sizing: border-box;
-}
-/* ====================== Tổng thể ====================== */
+/* ====================== TỔNG THỂ ====================== */
 html,
 body {
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  overflow: hidden; /* <-- THÊM LẠI */
   font-family: "Consolas", "Courier New", monospace;
   color: #d0e7ff;
   background: radial-gradient(circle at center, #031224, #010b16);
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  /* bù lại scale để full màn hình */
+  height: 100vh; /* <-- THÊM LẠI */
 }
 
-/* ====================== Nền hiệu ứng ====================== */
+/* ====================== NỀN HIỆU ỨNG ====================== */
 canvas#charRain {
   position: fixed;
   top: 0;
@@ -52,7 +21,6 @@ canvas#charRain {
   background: #000;
   opacity: 0.99;
 }
-
 canvas#fireworks {
   position: fixed;
   top: 0;
@@ -61,137 +29,371 @@ canvas#fireworks {
   pointer-events: none;
 }
 
-/* ====================== Header ====================== */
-header {
+/* ================================================== */
+/* === NAVBAR MỚI (THAY THẾ HEADER CŨ) === */
+/* ================================================== */
+.navbar {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  text-align: center;
-  background: rgba(25, 120, 210, 0.9);
-  color: white;
-  padding: 10px 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 0 20px;
+  background: rgba(10, 30, 50, 0.7);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(90, 180, 255, 0.25);
   z-index: 15;
-  backdrop-filter: blur(6px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-sizing: border-box;
 }
 
-header h1 {
-  margin: 0;
-  font-size: 24px;
+.nav-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-header p {
+.nav-group h3 {
   margin: 0;
+  color: #4fc3f7;
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.nav-group.input-group {
+  flex-grow: 1; /* Cho phép nhóm input co giãn */
+}
+.nav-group.input-group input {
+  width: 100%;
+  min-width: 150px;
+}
+
+.nav-group.result-group {
+  min-width: 200px;
+}
+.nav-group.result-group label {
+  font-size: 13px;
+  color: #aae1ff;
+  white-space: nowrap;
+}
+
+#navResultBox {
+  background: rgba(10, 20, 35, 0.45);
+  border: 1px solid rgba(80, 150, 255, 0.25);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: #e0f7ff;
+  width: 100%;
+  min-height: 20px;
+  word-break: break-all;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Ghi đè style Input/Button cho Navbar */
+.navbar input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(150, 200, 255, 0.25);
+  border-radius: 6px;
+  color: #d0e7ff;
+  padding: 8px 10px;
+  font-size: 13px;
+  margin: 0;
+  box-sizing: border-box;
+}
+.navbar button {
+  background: rgba(60, 140, 255, 0.2);
+  border: 1px solid rgba(100, 160, 255, 0.4);
+  border-radius: 6px;
+  color: #aee1ff;
+  padding: 8px 12px;
+  margin: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.navbar button:hover {
+  background: rgba(90, 170, 255, 0.35);
+  color: #fff;
+}
+.navbar .step-btn {
+  background: linear-gradient(90deg, #42a5f5 0%, #00e5ff 100%);
+  color: #081b2e;
+  border: none;
+  font-weight: bold;
+}
+.navbar button#reset {
+  padding: 8px 10px;
   font-size: 14px;
-  color: #cce5ff;
 }
 
-/* ====================== Bố cục container ====================== */
-
-.left,
-.right {
+/* ================================================== */
+/* === BỐ CỤC NỘI DUNG MỚI === */
+/* ================================================== */
+.content-container {
+  padding-top: 60px; /* Vẫn giữ */
+  height: 100vh; /* <--- XÓA DÒNG NÀY */
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 20px;
+  gap: 20px;
+  padding: 80px 20px 20px 20px;
   z-index: 2;
-  background: rgba(10, 25, 45, 0.35);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(90, 180, 255, 0.25);
-  border-radius: 14px;
-  box-shadow: 0 0 30px rgba(0, 80, 160, 0.25);
 }
 
-.left {
-  width: 660px;
-}
-.right {
-  width: 660px;
-}
-
-/* ====================== Frosted Glass Panel ====================== */
 .panel {
-  flex-shrink: 0;
   background: rgba(10, 30, 50, 0.45);
   backdrop-filter: blur(12px) brightness(1.15);
   border: 1px solid rgba(90, 180, 255, 0.25);
   border-radius: 12px;
   padding: 18px 20px;
   box-shadow: 0 0 18px rgba(0, 50, 100, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Ngăn nội dung tràn ra */
 }
-
 .panel h3 {
-  margin: 0 0 12px;
+  margin: 0 0 15px;
   color: #4fc3f7;
   text-shadow: 0 0 6px rgba(79, 195, 247, 0.4);
+  border-bottom: 1px solid rgba(79, 195, 247, 0.2);
+  padding-bottom: 8px;
+  flex-shrink: 0;
+}
+.panel h3 span {
+  font-size: 13px;
+  color: #99ccff;
+  font-weight: normal;
 }
 
-/* ====================== Input & Buttons ====================== */
-input {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(150, 200, 255, 0.25);
-  border-radius: 6px;
-  color: #d0e7ff;
-  padding: 8px;
-  margin-bottom: 10px;
-  width: 100%;
+.live-panel {
+  flex-basis: 50%; /* <--- XÓA DÒNG NÀY */
+  flex-grow: 1; /*  <--- XÓA DÒNG NÀY */
+  min-height: 350px; /* Vẫn giữ mi/n-height để đảm bảo sơ đồ có không gian */
+}
+.history-log-container {
+  flex-basis: 50%; /* <-- THÊM LẠI */
+  flex-grow: 1; /* <-- THÊM LẠI */
+  display: flex;
+  gap: 20px;
+  min-height: 250px;
+}
+.history-panel {
+  flex: 3; /* Bảng lịch sử rộng hơn */
+}
+.log-panel {
+  flex: 2; /* Log box hẹp hơn */
+}
+
+/* ================================================== */
+/* === SƠ ĐỒ FEISTEL MỚI (live-panel) === */
+/* ================================================== */
+.feistel-diagram {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  gap: 15px;
+}
+
+.dia-column {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+
+.dia-box-wrapper {
+  flex-shrink: 0;
+}
+.dia-box-wrapper label {
   font-size: 14px;
-}
-
-input::placeholder {
-  color: rgba(200, 220, 255, 0.4);
-}
-
-button {
-  background: rgba(60, 140, 255, 0.2);
-  border: 1px solid rgba(100, 160, 255, 0.4);
-  border-radius: 8px;
-  color: #aee1ff;
-  padding: 8px 12px;
-  margin-bottom: 6px;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  font-size: 14px;
-}
-
-button:hover {
-  background: rgba(90, 170, 255, 0.35);
-  color: #fff;
-  transform: translateY(-1px);
-}
-
-#step {
-  margin-top: auto;
+  color: #82cfff;
   font-weight: bold;
-  background: linear-gradient(90deg, #42a5f5 0%, #00e5ff 100%);
-  color: #081b2e;
-  border: none;
+}
+.dia-box {
+  background: rgba(100, 180, 255, 0.15);
+  border: 1px solid rgba(150, 220, 255, 0.3);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 15px;
+  color: #fff;
+  word-break: break-all;
+  font-weight: bold;
+  margin-top: 5px;
 }
 
-/* ====================== Box hiển thị thông tin ====================== */
-#stepBox,
-#resultBox,
-#log {
-  background: rgba(10, 20, 35, 0.45);
-  border: 1px solid rgba(80, 150, 255, 0.25);
+/* Cột Input/Output */
+.input-side,
+.output-side {
+  flex-basis: 200px; /* Độ rộng cố định */
+  flex-shrink: 0;
+}
+.output-side {
+  text-align: right;
+}
+
+/* Cột Hàm Feistel (f) */
+.feistel-box {
+  flex-grow: 1; /* Lấp đầy không gian */
+  min-width: 300px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed rgba(90, 180, 255, 0.3);
   border-radius: 8px;
   padding: 10px;
-  min-height: 45px;
-  max-height: 120px;
-  overflow-y: auto;
-  font-size: 14px;
-  white-space: pre-wrap;
+  justify-content: center;
+  gap: 8px;
 }
 
-/* ====================== Bảng vòng lặp ====================== */
-#currentRoundBox {
-  height: 120px;
-  overflow: hidden;
-  border: 1px solid rgba(70, 130, 200, 0.3);
+/* CSS cho chi tiết bên trong Feistel Box */
+.detail-grid {
+  display: grid;
+  grid-template-columns: auto 1fr; /* 2 cột: Nhãn và Box */
+  gap: 6px 10px;
+  align-items: center;
+}
+.detail-label {
+  font-size: 12px;
+  color: #82cfff;
+  text-align: right;
+}
+.detail-box {
+  background: rgba(10, 20, 35, 0.6);
+  border: 1px solid rgba(80, 150, 255, 0.25);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+  color: #e0f7ff;
+  word-break: break-all;
+}
+.sbox-container {
+  grid-column: 1 / -1; /* Vẫn trải rộng toàn bộ 2 cột */
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* LUÔN có 4 cột */
+  gap: 4px;
+  font-size: 11px;
+  text-align: center;
+  /* Các S-Box sẽ tự động tràn xuống hàng tiếp theo nếu nội dung quá dài */
+}
+.sbox-item {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex; /* Dùng flexbox để căn giữa nội dung theo chiều dọc */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.sbox-item .s-label {
+  font-weight: bold;
+  color: #fff;
+}
+.sbox-item .s-in {
+  color: #ffcc80;
+  word-break: break-all;
+} /* Thêm word-break */
+.sbox-item .s-out {
+  color: #9effff;
+  word-break: break-all;
+}
+
+/* Cột Đường dẫn (Path) */
+.path-side {
+  flex-basis: 80px;
+  flex-shrink: 0;
+  position: relative;
+  margin: 0 10px;
+}
+.path-line {
+  position: absolute;
+  background-color: #64b5f6;
+  opacity: 0.6;
+}
+/* L(in) -> R(out) (đường thẳng) */
+.path-l-top {
+  top: 25%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+}
+.path-l-bottom {
+  top: 25%;
+  left: 0;
+  width: 2px;
+  height: 50%;
+}
+.path-side .path-l-bottom {
+  border-right: 2px solid #64b5f6;
+  left: 100%;
+  top: 25%;
+}
+
+/* R(in) -> f -> XOR */
+.path-r-top {
+  top: 75%;
+  left: 0;
+  width: 50%;
+  height: 2px;
+}
+.path-side .path-r-top {
+  border-right: 2px solid #64b5f6;
+  left: 50%;
+  top: 25%;
+  height: 50%;
+}
+
+/* f -> XOR */
+.path-xor::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  height: 2px;
+  background-color: #ff8080;
+  opacity: 0.6;
+}
+.path-xor span {
+  /* Biểu tượng XOR */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  color: #ff8080;
+  background: #0a1e32;
+  padding: 0 5px;
+}
+/* XOR -> R(out) */
+.path-r-bottom {
+  top: 50%;
+  left: 0;
+  width: 50%;
+  height: 2px;
+}
+
+/* ================================================== */
+/* === LỊCH SỬ & LOG (Phần dưới) === */
+/* ================================================== */
+.round-history-container {
+  flex-grow: 1; /* Làm cho container bảng nở ra */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 160, 255, 0.3) transparent;
+  border: 1px solid rgba(80, 150, 255, 0.15);
   border-radius: 8px;
-  background: rgba(8, 25, 45, 0.5);
-  backdrop-filter: blur(8px);
-  padding: 6px;
+  background: rgba(0, 0, 0, 0.1);
+}
+.round-history-container::-webkit-scrollbar {
+  width: 6px;
+}
+.round-history-container::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 160, 255, 0.4);
+  border-radius: 6px;
 }
 
 table {
@@ -201,65 +403,51 @@ table {
   text-align: center;
   table-layout: fixed;
 }
-
 th {
-  background: rgba(20, 50, 80, 0.6);
+  background: rgba(20, 50, 80, 0.85);
+  backdrop-filter: blur(8px);
   color: #64b5f6;
   font-weight: bold;
-  padding: 6px;
+  padding: 8px 6px;
   border-bottom: 1px solid rgba(80, 150, 255, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
-
 td {
-  padding: 4px;
+  padding: 5px;
   border-bottom: 1px solid rgba(60, 100, 160, 0.15);
   word-break: break-all;
+  font-size: 12px;
 }
-
 tr.new {
   background-color: rgba(100, 200, 255, 0.1);
   transition: background-color 0.8s ease;
 }
 
-/* ====================== Lịch sử vòng lặp ====================== */
-.round-history-container {
-  height: 240px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(100, 160, 255, 0.3) transparent;
+/* === ĐƯỜNG KẺ PHÂN CHIA VÒNG MỚI === */
+tr.round-start td {
+  border-top: 2px solid rgba(79, 195, 247, 0.4);
+}
+/* Bỏ qua border-top cho hàng đầu tiên */
+#roundHistory tbody tr:first-child td {
+  border-top: none;
 }
 
-.round-history-container::-webkit-scrollbar {
-  width: 6px;
-}
-.round-history-container::-webkit-scrollbar-thumb {
-  background-color: rgba(100, 160, 255, 0.4);
-  border-radius: 6px;
-}
-
-#roundHistory thead th {
-  position: sticky;
-  top: 0;
-  background: rgba(20, 50, 80, 0.85);
-  backdrop-filter: blur(8px);
-  z-index: 2;
-  border-bottom: 1px solid rgba(80, 150, 255, 0.4);
-}
-
-/* ====================== Block List ====================== */
-#blockListBox {
+/* Log Box */
+.log-box {
+  flex-grow: 1;
   background: rgba(10, 20, 35, 0.45);
   border: 1px solid rgba(80, 150, 255, 0.25);
   border-radius: 8px;
-  padding: 6px;
-  min-height: 50px;
-  max-height: 120px;
+  padding: 10px;
   overflow-y: auto;
   font-size: 14px;
   white-space: pre-wrap;
+  word-break: break-all;
 }
 
-/* ====================== Toast ====================== */
+/* ====================== TOAST ====================== */
 #toast {
   position: fixed;
   bottom: 20px;
@@ -276,18 +464,4 @@ tr.new {
   opacity: 0;
   transition: opacity 0.5s ease;
   z-index: 20;
-}
-
-/* ====================== Hiệu ứng nổi ====================== */
-.panel,
-input,
-button,
-#stepBox,
-#resultBox,
-#log {
-  transition: transform 0.25s ease;
-}
-
-.panel:hover {
-  transform: translateY(-3px);
 }

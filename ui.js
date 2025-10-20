@@ -1,22 +1,40 @@
-// ui.js — DES Step-by-Step Demo
+// ui.js — DES Step-by-Step Demo (Giao diện Dashboard v2)
 
 // ====== State ======
-let blocks = []; // mỗi block: { bytes, cipherHex, rounds }
+let blocks = [];
 let currentRoundIndex = 0;
-let mode = null; // "encrypt" hoặc "decrypt"
-let lastResult = ""; // kết quả cuối cùng
-let lastMode = ""; // luân phiên Fill Cipher
+let mode = null;
+let lastResult = "";
+let lastMode = "";
+let lastHistoryRound = 0; // Biến mới để theo dõi đường kẻ bảng
 
-// ====== DOM elements ======
-const stepBox = document.getElementById("stepBox");
-const resultBox = document.getElementById("resultBox");
+// ====== DOM elements (ĐÃ CẬP NHẬT) ======
+const plaintextInput = document.getElementById("plaintext");
+const keyInput = document.getElementById("key");
+const navResultBox = document.getElementById("navResultBox"); // MỚI
 const log = document.getElementById("log");
-const currentRoundTbody = document.querySelector("#currentRound tbody");
 const historyTbody = document.querySelector("#roundHistory tbody");
+const historyContainer = document.querySelector(".round-history-container");
 const toast = document.getElementById("toast");
 const canvas = document.getElementById("fireworks");
 const ctx = canvas.getContext("2d");
 const fillBtn = document.getElementById("fillCipher");
+
+// --- DOM Elements MỚI cho Sơ đồ Feistel ---
+const livePanel = document.querySelector(".live-panel");
+const detailRoundNum = document.getElementById("detailRoundNum");
+const f_L_in = document.getElementById("f_L_in");
+const f_R_in = document.getElementById("f_R_in");
+const f_E_out = document.getElementById("f_E_out");
+const f_K_in = document.getElementById("f_K_in");
+const f_XOR_out = document.getElementById("f_XOR_out");
+const f_S_in_out = document.getElementById("f_S_in_out");
+const f_P_out = document.getElementById("f_P_out");
+const f_L_out = document.getElementById("f_L_out");
+const f_R_out = document.getElementById("f_R_out");
+
+// --- DOM Elements ĐÃ BỊ XÓA ---
+// blockListBox, resultBox, live_L_in (cũ), ...
 
 // ====== Helpers ======
 const enc = new TextEncoder();
@@ -45,14 +63,13 @@ function unpad(bytes) {
   return p > 0 && p <= 8 ? bytes.slice(0, -p) : bytes;
 }
 
-// ====== Canvas fireworks ======
+// ====== Canvas fireworks (Giữ nguyên) ======
 function resizeCanvas() {
   canvas.width = innerWidth;
   canvas.height = innerHeight;
 }
 addEventListener("resize", resizeCanvas);
 resizeCanvas();
-
 let particles = [];
 let animating = false;
 function spawnBurst(cx, cy, count) {
@@ -105,69 +122,103 @@ function triggerFireworks() {
   animateFireworks();
 }
 
-// ====== UI helpers ======
+// ===================================
+// ====== UI helpers (ĐÃ CẬP NHẬT) ======
+// ===================================
+
+/**
+ * Cập nhật Sơ đồ Feistel (thay thế updateLiveRoundPanel)
+ */
+function updateFeistelDiagram(roundData) {
+  if (!roundData || !roundData.feistel) {
+    console.error("Missing data for Feistel diagram", roundData);
+    return;
+  }
+  const f = roundData.feistel;
+  detailRoundNum.textContent = roundData.round;
+
+  // Cập nhật Input
+  f_L_in.textContent = roundData.L_in;
+  f_R_in.textContent = roundData.R_in;
+
+  // Cập nhật Khối Feistel
+  f_E_out.textContent = f.E_out_hex;
+  f_K_in.textContent = f.Subkey_hex;
+  f_XOR_out.textContent = f.XOR_out_hex;
+  f_P_out.textContent = f.P_out_hex;
+
+  // Xây dựng 8 ô S-Box
+  f_S_in_out.innerHTML = "";
+  for (let i = 0; i < 8; i++) {
+    const in_hex = f.S_in_chunks_hex[i];
+    const out_char = f.S_out_hex.charAt(i);
+    f_S_in_out.innerHTML += `
+      <div class="sbox-item">
+        <div class="s-label">S${i + 1}</div>
+        <div class="s-in">${in_hex}</div>
+        <div class="s-out">${out_char}</div>
+      </div>
+    `;
+  }
+
+  // Cập nhật Output
+  f_L_out.textContent = roundData.L_out;
+  f_R_out.textContent = roundData.R_out;
+
+  // Hiệu ứng flash
+  if (livePanel) {
+    livePanel.style.transition = "none";
+    livePanel.style.backgroundColor = "rgba(90, 180, 255, 0.2)";
+    setTimeout(() => {
+      livePanel.style.transition = "background-color 0.5s ease";
+      livePanel.style.backgroundColor = "";
+    }, 100);
+  }
+}
+
 function clearTables() {
-  currentRoundTbody.innerHTML = "";
   historyTbody.innerHTML = "";
+  lastHistoryRound = 0; // Reset bộ đếm vòng
 }
 function showToast(msg) {
   toast.textContent = msg;
   toast.style.opacity = "1";
   setTimeout(() => (toast.style.opacity = "0"), 2500);
 }
-function showBlocks(blocks) {
-  const box = document.getElementById("blockListBox");
-  if (!box) return;
-  if (!blocks || blocks.length === 0) {
-    box.textContent = "Chưa có dữ liệu.";
-    return;
-  }
-  box.innerHTML = blocks
-    .map(
-      (b, i) =>
-        `<div>Block ${i + 1}: <span style="color:#80d8ff">${b}</span></div>`
-    )
-    .join("");
-}
+// HÀM showBlocks() ĐÃ BỊ XÓA
 
-// ====== History colors ======
-function getBlockColor(index) {
-  const hue = (index * 55) % 360; // màu gradient
-  return `hsla(${hue}, 80%, 60%, 0.15)`;
-}
+// ====== History (CẬP NHẬT) ======
 function addHistoryRow(_, roundObj, blockIndex) {
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td>${roundObj.round}</td>
-    <td>${roundObj.L}</td>
-    <td>${roundObj.R}</td>
+    <td>${roundObj.L_in}</td>
+    <td>${roundObj.R_in}</td>
     <td>${roundObj.subkey}</td>
   `;
-  tr.style.backgroundColor = getBlockColor(blockIndex);
+
+  // === LOGIC THÊM ĐƯỜNG KẺ PHÂN CHIA ===
+  if (roundObj.round !== lastHistoryRound) {
+    tr.classList.add("round-start");
+    lastHistoryRound = roundObj.round;
+  }
+  // Xóa logic màu cũ (nếu có)
+  // tr.style.backgroundColor = ... (ĐÃ BỊ XÓA)
+
   tr.classList.add("new");
   setTimeout(() => tr.classList.remove("new"), 1000);
   historyTbody.appendChild(tr);
-  tr.scrollIntoView({ behavior: "smooth", block: "end" });
-}
-function renderCurrentRound(rows) {
-  currentRoundTbody.innerHTML = "";
-  for (const r of rows) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.roundObj.round}</td><td>${r.roundObj.L}</td><td>${r.roundObj.R}</td><td>${r.roundObj.subkey}</td>`;
-    currentRoundTbody.appendChild(tr);
-  }
+  historyContainer.scrollTop = historyContainer.scrollHeight;
 }
 
-// ====== Encrypt/Decrypt ======
+// ====== Encrypt/Decrypt (CẬP NHẬT) ======
 function startEncrypt() {
-  const text = document.getElementById("plaintext").value || "";
-  const key = document.getElementById("key").value || "";
+  const text = plaintextInput.value || "";
+  const key = keyInput.value || "";
   if (key.length < 8) return alert("Key phải >= 8 ký tự.");
   const bytes = utf8ToBytes(text);
   const padded = padPKCS5(bytes);
-
   blocks = [];
-  const blockStrList = [];
   for (let i = 0; i < padded.length; i += 8) {
     const blockBytes = padded.slice(i, i + 8);
     const blockStr = bytesToLatin1(blockBytes);
@@ -177,34 +228,32 @@ function startEncrypt() {
       cipherHex: res.cipherHex,
       rounds: res.steps,
     });
-    blockStrList.push(blockStr);
   }
-
   lastResult = blocks.map((b) => b.cipherHex).join("");
   lastMode = "encrypt";
   mode = "encrypt";
   currentRoundIndex = 0;
-
   clearTables();
-  showBlocks(blockStrList);
-  stepBox.textContent = `Encrypt prepared — ${blocks.length} block(s). Click "Tiếp tục".`;
-  log.textContent =
-    'Chuẩn bị xong. Mỗi lần "Tiếp tục" chạy 1 round cho tất cả block.';
+  log.textContent = `Chuẩn bị mã hóa ${blocks.length} block(s). Nhấn "Vòng tiếp".`;
   fillBtn.disabled = false;
+  resetFeistelDiagram(); // Reset sơ đồ
 }
 
 function startDecrypt() {
-  const key = document.getElementById("key").value || "";
+  const key = keyInput.value || "";
   if (key.length < 8) return alert("Key phải >= 8 ký tự.");
-  const input = document.getElementById("plaintext").value.trim();
-  if (!/^[0-9a-fA-F]+$/.test(input))
+  const input = plaintextInput.value.trim();
+  if (!/^[0-9a-fA-F\s]+$/.test(input.replace(/\s/g, "")))
     return alert("Nhập ciphertext hex hợp lệ.");
-
+  const hexInput = input.replace(/\s/g, "");
   blocks = [];
   let bytesAll = [];
-  const blockStrList = [];
-  for (let i = 0; i < input.length; i += 16) {
-    const hex = input.substr(i, 16);
+  for (let i = 0; i < hexInput.length; i += 16) {
+    const hex = hexInput.substr(i, 16);
+    if (hex.length < 16) {
+      log.textContent = `Block cuối (${hex}) không đủ 16 ký tự. Bỏ qua.`;
+      continue;
+    }
     const res = DES.decryptBlockFromHex(hex, key);
     blocks.push({
       bytes: latin1ToBytes(res.plaintext),
@@ -212,27 +261,26 @@ function startDecrypt() {
       rounds: res.steps,
     });
     bytesAll.push(...latin1ToBytes(res.plaintext));
-    blockStrList.push(hex);
   }
-
+  if (blocks.length === 0) {
+    log.textContent = "Không tìm thấy block hex 64-bit hợp lệ.";
+    return;
+  }
   const unp = unpad(new Uint8Array(bytesAll));
   lastResult = bytesToUtf8(unp);
   lastMode = "decrypt";
   mode = "decrypt";
   currentRoundIndex = 0;
-
   clearTables();
-  showBlocks(blockStrList);
-  stepBox.textContent = `Decrypt prepared — ${blocks.length} block(s). Click "Tiếp tục".`;
-  log.textContent =
-    'Chuẩn bị xong. Mỗi lần "Tiếp tục" chạy 1 round cho tất cả block.';
+  log.textContent = `Chuẩn bị giải mã ${blocks.length} block(s). Nhấn "Vòng tiếp".`;
   fillBtn.disabled = false;
+  resetFeistelDiagram();
 }
 
-// ====== Step round ======
+// ====== Step round (CẬP NHẬT) ======
 function stepAll() {
   if (!blocks.length) {
-    log.textContent = "Chưa có block.";
+    log.textContent = "Chưa có block. Hãy nhấn Mã hóa hoặc Giải mã trước.";
     return;
   }
   if (currentRoundIndex >= 16) {
@@ -240,71 +288,76 @@ function stepAll() {
     return;
   }
 
-  // Lưu vòng hiện tại vào lịch sử
-  const rows = [];
   for (let b = 0; b < blocks.length; b++) {
     const roundObj = blocks[b].rounds[currentRoundIndex];
     addHistoryRow(null, roundObj, b);
-    rows.push({ blockIndex: b, roundObj });
   }
 
-  renderCurrentRound(rows);
-  stepBox.textContent = `Vòng ${currentRoundIndex + 1}/16 cho ${
-    blocks.length
-  } block(s)`;
-  log.textContent = `Round ${currentRoundIndex + 1} của ${
-    blocks.length
-  } block(s).`;
+  // Cập nhật Sơ đồ Feistel (luôn hiển thị cho block 1)
+  const detailData = blocks[0].rounds[currentRoundIndex];
+  updateFeistelDiagram(detailData);
+
+  log.textContent = `Hiển thị chi tiết vòng ${
+    currentRoundIndex + 1
+  } cho Block 1.`;
 
   currentRoundIndex++;
+
   if (currentRoundIndex === 16) {
-    resultBox.textContent =
-      mode === "encrypt"
-        ? `Ciphertext: ${lastResult}`
-        : `Plaintext: ${lastResult}`;
+    // Cập nhật kết quả lên Navbar
+    navResultBox.textContent =
+      mode === "encrypt" ? `Hex: ${lastResult}` : `Text: ${lastResult}`;
     showToast(`✅ Hoàn thành ${blocks.length} block(s) — 16 vòng`);
     triggerFireworks();
+    log.textContent = "Hoàn thành 16 vòng. Xem kết quả trên thanh điều hướng.";
   }
 }
 
-// ====== Fill Cipher ======
+// ====== Fill Cipher (CẬP NHẬT) ======
 fillBtn.addEventListener("click", () => {
-  const inputBox = document.getElementById("plaintext");
-  if (currentRoundIndex < 16) {
-    alert("Chưa hoàn thành.");
-    return;
-  }
   if (!lastResult) {
-    alert("Chưa có dữ liệu!");
+    log.textContent = "Chưa có kết quả để chèn.";
     return;
   }
-  inputBox.value = lastResult;
+  plaintextInput.value = lastResult;
   fillBtn.disabled = true;
   if (lastMode === "encrypt") {
     lastMode = "decrypt";
-    fillBtn.textContent = "🔁 Dùng cho Giải mã";
+    fillBtn.title = "Dùng kết quả này để Giải mã";
   } else {
     lastMode = "encrypt";
-    fillBtn.textContent = "🔁 Dùng cho Mã hóa";
+    fillBtn.title = "Dùng kết quả này để Mã hóa";
   }
 });
 
-// ====== Reset ======
+// ====== Reset (CẬP NHẬT) ======
+function resetFeistelDiagram() {
+  detailRoundNum.textContent = "0";
+  f_L_in.textContent = "...";
+  f_R_in.textContent = "...";
+  f_E_out.textContent = "...";
+  f_K_in.textContent = "...";
+  f_XOR_out.textContent = "...";
+  f_S_in_out.innerHTML = "";
+  f_P_out.textContent = "...";
+  f_L_out.textContent = "...";
+  f_R_out.textContent = "...";
+}
+
 document.getElementById("reset").addEventListener("click", () => {
-  document.getElementById("plaintext").value = "";
-  document.getElementById("key").value = "";
-  document.getElementById("blockListBox").textContent = "Chưa có dữ liệu";
+  plaintextInput.value = "";
+  keyInput.value = "";
   blocks = [];
   currentRoundIndex = 0;
   mode = null;
   lastResult = "";
   lastMode = "";
   clearTables();
-  resultBox.textContent = "";
-  stepBox.textContent = "Chưa khởi chạy";
+  navResultBox.textContent = "—"; // Reset kết quả trên navbar
   log.textContent = "Reset hoàn tất.";
   fillBtn.disabled = false;
-  fillBtn.textContent = "Chèn kết quả";
+  fillBtn.title = "Chèn kết quả";
+  resetFeistelDiagram(); // Reset sơ đồ
 });
 
 // ====== Nút chính ======

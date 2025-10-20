@@ -2,77 +2,104 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <title>💻 DES Step-by-Step Demo</title>
+    <title>💻 DES Dashboard v2</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header>
-      <h1>💻 DES Step-by-Step Demo</h1>
-      <p>Giải thích chi tiết các bước mã hóa DES</p>
-    </header>
-
     <canvas id="charRain"></canvas>
-    <div class="container">
-      <!-- Cột trái -->
-      <div class="left">
-        <div class="panel">
-          <h3>🔐 Nhập dữ liệu</h3>
-          <label>Plaintext hoặc Ciphertext:</label>
-          <input id="plaintext" placeholder="Nhập dữ liệu..." />
-          <label>Khóa (8 ký tự):</label>
-          <input id="key" maxlength="8" placeholder="VD: mysecret" />
-        </div>
 
-        <div class="panel">
-          <h3>🧱 Các Block được chia</h3>
-          <div id="blockListBox">Chưa có dữ liệu</div>
-          <div class="button-group">
-            <button id="encrypt">Mã hóa</button>
-            <button id="decrypt">Giải mã</button>
-            <button id="fillCipher">Chèn kết quả</button>
-            <button id="reset">🔁 Làm lại</button>
+    <nav class="navbar">
+      <div class="nav-group title-group">
+        <h3>💻 DES Dashboard</h3>
+      </div>
+      <div class="nav-group input-group">
+        <input
+          id="plaintext"
+          placeholder="Plaintext hoặc Ciphertext (Hex)..."
+        />
+        <input id="key" maxlength="8" placeholder="Khóa (8 ký tự)" />
+      </div>
+      <div class="nav-group button-group">
+        <button id="encrypt" title="Mã hóa">Mã hóa</button>
+        <button id="decrypt" title="Giải mã">Giải mã</button>
+        <button id="step" class="step-btn" title="Chạy 1 Vòng">
+          ▶ Vòng tiếp
+        </button>
+        <button id="fillCipher" title="Chèn kết quả">Chèn</button>
+        <button id="reset" title="Làm lại">🔁</button>
+      </div>
+      <div class="nav-group result-group">
+        <label>Kết quả cuối:</label>
+        <div id="navResultBox">—</div>
+      </div>
+    </nav>
+
+    <div class="content-container">
+      <div class="panel live-panel">
+        <h3>
+          🔍 Chi tiết Vòng <span id="detailRoundNum">0</span>
+          <span> (Block 1)</span>
+        </h3>
+        <div class="feistel-diagram">
+          <div class="dia-column input-side">
+            <div class="dia-box-wrapper">
+              <label>L (Input)</label>
+              <div class="dia-box" id="f_L_in">...</div>
+            </div>
+            <div class="dia-box-wrapper">
+              <label>R (Input)</label>
+              <div class="dia-box" id="f_R_in">...</div>
+            </div>
+          </div>
+
+          <div class="dia-column path-side">
+            <div class="path-line path-l-top"></div>
+            <div class="path-line path-r-top"></div>
+            <div class="path-xor">
+              <span>&#8853;</span>
+            </div>
+            <div class="path-line path-l-bottom"></div>
+            <div class="path-line path-r-bottom"></div>
+          </div>
+
+          <div class="dia-column feistel-box">
+            <div class="detail-grid">
+              <div class="detail-label">R &rarr; E (Mở rộng)</div>
+              <div class="detail-box" id="f_E_out">...</div>
+              <div class="detail-label">Subkey (K)</div>
+              <div class="detail-box" id="f_K_in">...</div>
+              <div class="detail-label">E ⊕ K</div>
+              <div class="detail-box" id="f_XOR_out">...</div>
+              <div class="detail-label">S-Boxes (&darr;)</div>
+              <div class="detail-box sbox-container" id="f_S_in_out"></div>
+              <div class="detail-label">P (Kết quả f)</div>
+              <div class="detail-box" id="f_P_out">...</div>
+            </div>
+          </div>
+
+          <div class="dia-column output-side">
+            <div class="dia-box-wrapper">
+              <label>L (Output)</label>
+              <div class="dia-box" id="f_L_out">...</div>
+            </div>
+            <div class="dia-box-wrapper">
+              <label>R (Output)</label>
+              <div class="dia-box" id="f_R_out">...</div>
+            </div>
           </div>
         </div>
-
-        <div class="panel">
-          <h3>📊 Thông tin bước</h3>
-          <div id="stepBox">Chưa khởi chạy</div>
-        </div>
-
-        <div class="panel">
-          <h3>📋 Kết quả</h3>
-          <div id="resultBox">—</div>
-        </div>
-
-        <button id="step" class="step-btn">▶ Tiếp tục</button>
       </div>
 
-      <!-- Cột phải -->
-      <div class="right">
-        <div class="panel">
-          <h3>🔁 Vòng hiện tại</h3>
-          <div class="table-box">
-            <table id="currentRound">
-              <thead>
-                <tr>
-                  <th>Dòng</th>
-                  <th>L</th>
-                  <th>R</th>
-                  <th>Subkey</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-
-          <h3>📜 Lịch sử</h3>
+      <div class="history-log-container">
+        <div class="panel history-panel">
+          <h3>📜 Lịch sử 16 Vòng</h3>
           <div class="round-history-container">
             <table id="roundHistory">
               <thead>
                 <tr>
-                  <th>Dòng</th>
-                  <th>L</th>
-                  <th>R</th>
+                  <th>Vòng</th>
+                  <th>L (Input)</th>
+                  <th>R (Input)</th>
                   <th>Subkey</th>
                 </tr>
               </thead>
@@ -80,14 +107,12 @@
             </table>
           </div>
         </div>
-
-        <div class="panel">
+        <div class="panel log-panel">
           <h3>🐞 Debug / Log</h3>
-          <div id="log">Sẵn sàng.</div>
+          <div id="log" class="log-box">Sẵn sàng.</div>
         </div>
       </div>
     </div>
-
     <div id="toast">✅ Hoàn thành 16 vòng DES!</div>
     <canvas id="fireworks"></canvas>
 

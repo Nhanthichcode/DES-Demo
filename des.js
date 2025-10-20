@@ -135,20 +135,49 @@ const DES = (() => {
     return subkeys;
   }
 
-  function feistel(R, K) {
-    const expanded = permute(R, E);
-    const x = xor(expanded, K);
-    let out = [];
+  // === BÊN TRONG DES.JS ===
+
+  function feistel(R_bits, K_bits) {
+    // 1. Expansion (E)
+    const E_out_bits = permute(R_bits, E);
+
+    // 2. Key XOR
+    const XOR_out_bits = xor(E_out_bits, K_bits);
+
+    let s_box_in_chunks_bits = []; // Mảng 8 chunk (mỗi chunk 6 bit)
+    let s_box_out_bits = []; // Mảng 32 bit kết quả
+
+    // 3. S-Box Substitution
     for (let i = 0; i < 8; i++) {
-      const chunk = x.slice(i * 6, i * 6 + 6);
+      const chunk = XOR_out_bits.slice(i * 6, i * 6 + 6);
+      s_box_in_chunks_bits.push(chunk); // Lưu lại chunk 6-bit
+
       const row = (chunk[0] << 1) | chunk[5];
       const col =
         (chunk[1] << 3) | (chunk[2] << 2) | (chunk[3] << 1) | chunk[4];
       const val = SBOX[i][row][col];
       const bin = val.toString(2).padStart(4, "0");
-      for (const ch of bin) out.push(Number(ch));
+
+      for (const ch of bin) s_box_out_bits.push(Number(ch));
     }
-    return permute(out, P);
+
+    // 4. Permutation (P)
+    const P_out_bits = permute(s_box_out_bits, P);
+
+    // Trả về đối tượng chi tiết thay vì chỉ P_out_bits
+    return {
+      R_in_hex: bitsToHex(R_bits.slice(0, 32)), // R đầu vào (32-bit)
+      E_out_hex: bitsToHex(E_out_bits), // Kết quả E-box (48-bit)
+      Subkey_hex: bitsToHex(K_bits), // Subkey dùng (48-bit)
+      XOR_out_hex: bitsToHex(XOR_out_bits), // Kết quả E ⊕ K (48-bit)
+
+      // Chi tiết S-Box
+      S_in_chunks_hex: s_box_in_chunks_bits.map((chunk) => bitsToHex(chunk)), // 8 chunk 6-bit (hex)
+      S_out_hex: bitsToHex(s_box_out_bits), // Kết quả S-Box (32-bit)
+
+      P_out_hex: bitsToHex(P_out_bits), // Kết quả P-Box (32-bit)
+      f_result_bits: P_out_bits, // Bits kết quả cuối cùng của f
+    };
   }
 
   function desCore(inputBits, keyBits, decrypt = false) {
@@ -159,14 +188,27 @@ const DES = (() => {
       R = bits.slice(32);
     const steps = [];
     for (let r = 0; r < 16; r++) {
-      const f = feistel(R, keys[r]);
-      const newR = xor(L, f);
+      // *** THAY ĐỔI Ở ĐÂY ***
+      // const f = feistel(R, keys[r]); // Dòng cũ
+      const feistel_details = feistel(R, keys[r]); // Dòng mới
+
+      // const newR = xor(L, f); // Dòng cũ
+      const newR = xor(L, feistel_details.f_result_bits); // Dòng mới
+
       steps.push({
         round: r + 1,
-        L: bitsToHex(L),
-        R: bitsToHex(R),
-        subkey: bitsToHex(keys[r]),
+        L_in: bitsToHex(L), // L đầu vào vòng này
+        R_in: bitsToHex(R), // R đầu vào vòng này
+        subkey: feistel_details.Subkey_hex, // Subkey (từ object mới)
+
+        // Thêm chi tiết Feistel
+        feistel: feistel_details,
+
+        L_out: bitsToHex(R), // L kết quả (L(i+1) = R(i))
+        R_out: bitsToHex(newR), // R kết quả (R(i+1) = L(i) XOR f)
       });
+      // *** KẾT THÚC THAY ĐỔI ***
+
       L = R;
       R = newR;
     }
